@@ -33,6 +33,25 @@ bool is_on_buffer(struct wb_device *, u32 mb_idx);
 
 /*----------------------------------------------------------------------------*/
 
+/*
+ * The caller owns both arrays, their lifetime, and synchronization. No operation
+ * allocates memory. Sectors must be aligned to eight sectors (one 4 KiB block),
+ * and entry indices must be less than nr_entries.
+ */
+int wb_map_init(struct wb_map *map, struct wb_map_entry *entries,
+		u32 nr_entries, u32 *heads, u32 nr_buckets);
+u32 wb_map_lookup(const struct wb_map *map, u64 sector);
+
+/* Removing an unlinked entry is harmless and preserves its sector. */
+void wb_map_remove(struct wb_map *map, u32 idx);
+
+/*
+ * Any other entry for this sector must already have been removed. Re-registering
+ * the same index is allowed, and moves it to the front of its bucket. An index
+ * previously linked under a different sector is unlinked before its key changes.
+ */
+void wb_map_insert(struct wb_map *map, u32 idx, u64 sector);
+
 struct lookup_key {
 	sector_t sector;
 };

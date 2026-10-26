@@ -130,6 +130,22 @@ struct segment_header_device {
 
 /*----------------------------------------------------------------------------*/
 
+#define WB_MAP_NONE ((u32)~0U)
+
+/* The array index is the stable physical cache block number. */
+struct wb_map_entry {
+	u64 sector;
+	u32 next;
+	u32 prev;
+};
+
+struct wb_map {
+	struct wb_map_entry *entries;
+	u32 *heads;
+	u32 nr_entries;
+	u32 nr_buckets;
+};
+
 struct dirtiness {
 	bool is_dirty;
 	u8 data_bits;
