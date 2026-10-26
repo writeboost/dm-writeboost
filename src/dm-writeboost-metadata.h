@@ -28,41 +28,25 @@ struct rambuffer *get_rambuffer_by_id(struct wb_device *wb, u64 id);
 sector_t calc_mb_start_sector(struct wb_device *, struct segment_header *,
 			      u32 mb_idx);
 u8 mb_idx_inseg(struct wb_device *, u32 mb_idx);
-struct segment_header *mb_to_seg(struct wb_device *, struct metablock *);
+struct segment_header *cache_idx_to_seg(struct wb_device *wb, u32 cache_idx);
+u32 segment_start_idx(struct wb_device *wb, struct segment_header *seg);
+sector_t segment_start_sector(struct wb_device *wb, struct segment_header *seg);
+static inline sector_t cache_sector(struct wb_device *wb, u32 cache_idx)
+{
+	return wb->map.entries[cache_idx].sector;
+}
+
 bool is_on_buffer(struct wb_device *, u32 mb_idx);
 
 /*----------------------------------------------------------------------------*/
-
-/*
- * The caller owns both arrays, their lifetime, and synchronization. No operation
- * allocates memory. Sectors must be aligned to eight sectors (one 4 KiB block),
- * and entry indices must be less than nr_entries.
- */
-int wb_map_init(struct wb_map *map, struct wb_map_entry *entries,
-		u32 nr_entries, u32 *heads, u32 nr_buckets);
-u32 wb_map_lookup(const struct wb_map *map, u64 sector);
-
-/* Removing an unlinked entry is harmless and preserves its sector. */
-void wb_map_remove(struct wb_map *map, u32 idx);
-
-/*
- * Any other entry for this sector must already have been removed. Re-registering
- * the same index is allowed, and moves it to the front of its bucket. An index
- * previously linked under a different sector is unlinked before its key changes.
- */
-void wb_map_insert(struct wb_map *map, u32 idx, u64 sector);
 
 struct lookup_key {
 	sector_t sector;
 };
 
-struct ht_head;
-struct ht_head *ht_get_head(struct wb_device *, struct lookup_key *);
-struct metablock *ht_lookup(struct wb_device *,
-			    struct ht_head *, struct lookup_key *);
-void ht_register(struct wb_device *, struct ht_head *,
-		 struct metablock *, struct lookup_key *);
-void ht_del(struct wb_device *, struct metablock *);
+u32 ht_lookup(struct wb_device *wb, struct lookup_key *key);
+void ht_register(struct wb_device *wb, u32 cache_idx, struct lookup_key *key);
+void ht_del(struct wb_device *wb, u32 cache_idx);
 void discard_caches_inseg(struct wb_device *, struct segment_header *);
 
 /*----------------------------------------------------------------------------*/
